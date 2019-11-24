@@ -1,4 +1,4 @@
-const ReportParser = require('./ReportParser');
+const ReportParser = require('./reportParser');
 
 const report_parser = new ReportParser();
 const parser_config = { 'working_dir' : 'C:\\Users\\Bryon\\source\\repos\\AiSolutions',

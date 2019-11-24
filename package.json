@@ -14,7 +14,8 @@
     "sinon": "^7.5.0"
   },
   "scripts": {
-    "test": "nyc --reporter=html --reporter=text mocha"
+    "test": "nyc --reporter=html --reporter=text mocha",
+    "start": "node src/app.js"
   },
   "repository": {
     "type": "git",

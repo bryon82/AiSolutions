@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.should();
 const sinon = require("sinon");
 const fs = require('fs');
-const ReportParser = require('../src/ReportParser');
+const ReportParser = require('../src/reportParser');
 
 var reportParser = new ReportParser();
 
