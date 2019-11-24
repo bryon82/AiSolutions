@@ -1,19 +1,78 @@
 const fs = require('fs');
-class ReportParser {  
-  async parse(config, reportCallBack){      
-    var noError = 'no errors'
-    var pathToFile = config.working_dir + '\\' + config.filename;
-    const data = await fs.promises.readFile(pathToFile, 'utf8');
-    var targetLoc = data.search(config.target_field)
-      if (targetLoc < 0){
-        reportCallBack('target field not found', '');
-        return;      
-      }    
-    var parsed_value = data.substring(targetLoc).split((/[\r\n:]+/), 2)[1].trim();  
-    reportCallBack(noError, parsed_value);
+const path = require('path');
+const async = require('async');
+
+class ReportParser {
+  async parse(config, reportCallBack) {
+    var noError = 'no errors';
+    try {
+
+      // check if config object has the necessary properties
+      this.validateConfig(config);
+
+      // construct file path and read in file
+      var data = await this.readReport(config);
+
+      // find and get value of target field
+      var parsed_value = this.getValue(config, data);
+
+      // invoke callback
+      reportCallBack(noError, parsed_value);
+
+      // remove report if necessary
+      await this.removeReport(config);
+    }
+
+    // catch thrown errors
+    catch (err) {
+      // ENOENT error is for read file errors
+      if (err.code === 'ENOENT') {
+        reportCallBack('file not found', '');
+        return;
+      }
+      reportCallBack(err.message, '');
+    }
   }
-} 
-  
-const report_parser = new ReportParser();
-const parser_config = { 'working_dir' : 'C:\\Users\\Bryon\\source\\repos\\AiSolutions', 'filename' : 'qa.report', 'target_field' : 'report_status'};
-report_parser.parse(parser_config, (err, parsed_value) => { console.log('error is: ', err); console.log('parsed value is: ', parsed_value);});
+
+  validateConfig(config) {
+    if (!config.hasOwnProperty('working_dir') ||
+      !config.hasOwnProperty('filename') ||
+      !config.hasOwnProperty('target_field')) {
+      throw new Error('config object is not constructed properly');
+    }
+  }
+
+  async readReport(config) {
+    var pathToFile = path.join(config.working_dir, config.filename);
+    return await fs.promises.readFile(pathToFile, 'utf8');
+  }
+
+  getValue(config, data) {
+    // find target field index using regex with word boundary at the end
+    // throws error if the target field is not found
+    var regex = new RegExp(config.target_field + '\\b');
+    var targetIndex = data.search(regex);
+    if (targetIndex < 0) {
+      throw new Error('target field not found');
+    };
+
+    // use the target index to separate out field line
+    // split line on line return and colon, max 2 items
+    // target value will be at 1st index. trim spaces
+    return data.substring(targetIndex)
+      .split((/[\r\n:]+/), 2)[1]
+      .trim();
+  }
+
+  async removeReport(config) {
+    // check if optional delete property is present and if it is true
+    // using string constructor in case if value is a boolean or string 
+    if (config.hasOwnProperty('remove_after_parse') &&
+      String(config.remove_after_parse).toLowerCase() === 'true') {
+      var pathToFile = path.join(config.working_dir, config.filename);
+      await fs.promises.unlink(pathToFile);
+    }
+  }
+}
+
+module.exports = ReportParser;
