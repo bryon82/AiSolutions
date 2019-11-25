@@ -26,6 +26,27 @@ describe('smoke test', function () {
   });
 });
 
+describe('valid arguments', function () {
+  it('should be a function', function () {
+    expect(reportParser.validArguments).to.be.a('function');
+  });
+
+  it('returns false if first argument is not an object', function () {
+    expect(reportParser.validArguments(1, function(){})).to.be.false;      
+  });
+
+  it('returns false if second argument is not a function', function () {
+    expect(reportParser.validArguments(parser_config, 1)).to.be.false;      
+  });
+
+  it('returns false if first argument is not an object and second argument is not a function', function () {
+    expect(reportParser.validArguments(1, 1)).to.be.false;      
+  }); 
+
+  it('returns true if first argument is an object and second argument is a function', function () {
+    expect(reportParser.validArguments(parser_config, function(){})).to.be.true;      
+  });   
+});
 
 describe('config object validation', function () {
   it('should be a function', function () {
@@ -272,5 +293,9 @@ describe('parse', function () {
       expect(err).to.equal('target field not found');
       expect(parsed_value).to.be.empty;
     });
+  });
+
+  it('returns if first argument is not an object', function () {
+    expect(reportParser.parse(1, function(){})).to.be.undefined;      
   });
 });

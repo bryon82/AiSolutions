@@ -17,8 +17,11 @@ class ReportParser {
    * @param {object}   config   config object.
    * @param {function} callback callback function.
    */
-  parse(config, callBack) {
-
+  parse(config, callback) {
+    if (!this.validArguments(config, callback)){
+      return;
+    }
+    
     // waterfall sends the results from the previous function as arguments to the next
     async.waterfall([
       async.apply(this.validateConfig, config),
@@ -31,8 +34,24 @@ class ReportParser {
         errorMessage = err.message;
         result = '';
       }
-      callBack(errorMessage, result);
+      callback(errorMessage, result);
     });
+  }
+
+  validArguments(config, callback) {
+    if (typeof config !== 'object' && typeof callback !== 'function') {
+      console.log('object and function were not passed in');
+      return false;          
+    }
+    else if (typeof config !== 'object') {
+      console.log('first argument was not an object');
+      return false; 
+    }
+    else if (typeof callback !== 'function') {
+      console.log('second argument was not a function');
+      return false; 
+    }
+    return true;
   }
 
   /**
