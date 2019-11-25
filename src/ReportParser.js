@@ -1,77 +1,118 @@
+/**
+ * Class to parse a report file by finding a target field in a report
+ * file. File path, filename, target field, and optional remove after parse
+ * values are provided by a config file.
+ *
+ * @file   This files defines the ReportParser class.
+ * @author Bryon Bailey
+ */
+
 const fs = require('fs');
 const path = require('path');
 const async = require('async');
 
 class ReportParser {
-  async parse(config, reportCallBack) {
-    var noError = 'no errors';
-    try {
+  /**
+   * orchestrates the parsing of a report
+   * @param {object}   config   config object.
+   * @param {function} callback callback function.
+   */
+  parse(config, callBack) {
 
-      // check if config object has the necessary properties
-      this.validateConfig(config);
-
-      // construct file path and read in file
-      var data = await this.readReport(config);
-
-      // find and get value of target field
-      var parsed_value = this.getValue(config, data);
-
-      // invoke callback
-      reportCallBack(noError, parsed_value);
-
-      // remove report if necessary
-      await this.removeReport(config);
-    }
-
-    // catch thrown errors
-    catch (err) {
-      // ENOENT error is for read file errors
-      if (err.code === 'ENOENT') {
-        reportCallBack('file not found', '');
-        return;
+    // waterfall sends the results from the previous function as arguments to the next
+    async.waterfall([
+      async.apply(this.validateConfig, config),
+      this.readReport,
+      this.getValue,
+      this.removeReport
+    ], function (err, result) {
+      let errorMessage = '';
+      if (err !== null) {
+        errorMessage = err.message;
+        result = '';
       }
-      reportCallBack(err.message, '');
+      callBack(errorMessage, result);
+    });
+  }
+
+  /**
+   * validates the config object.
+   * @param {object}   config   config object.
+   * @param {function} callback callback function.
+   */
+  validateConfig(config, callback) {
+    let err = null;
+    if (!Object.prototype.hasOwnProperty.call(config, 'working_dir') ||
+      !Object.prototype.hasOwnProperty.call(config, 'filename') ||
+      !Object.prototype.hasOwnProperty.call(config, 'target_field')) {
+      err = new Error('config object is not constructed properly');
     }
+    callback(err, config);
   }
 
-  validateConfig(config) {
-    if (!config.hasOwnProperty('working_dir') ||
-      !config.hasOwnProperty('filename') ||
-      !config.hasOwnProperty('target_field')) {
-      throw new Error('config object is not constructed properly');
-    }
+  /**
+   * reads the data from the the report.
+   * @param {object}   config   config object.
+   * @param {function} callback callback function.
+   */
+  readReport(config, callback) {
+    let pathToFile = path.join(config.working_dir, config.filename);
+    fs.readFile(pathToFile, 'utf8', function (err, data) {
+      callback(err, config, data);
+    });
   }
 
-  async readReport(config) {
-    var pathToFile = path.join(config.working_dir, config.filename);
-    return await fs.promises.readFile(pathToFile, 'utf8');
-  }
+  /**
+   * gets the value for the target field from the report data.
+   * @param {object}   config   config object.
+   * @param {string}   data     data from reading in report.
+   * @param {function} callback callback function.
+   */
+  getValue(config, data, callback) {
+    // find target field index using regex with word boundary at the end    
+    let regex = new RegExp(config.target_field + '\\b');
+    let targetIndex = data.search(regex);
 
-  getValue(config, data) {
-    // find target field index using regex with word boundary at the end
     // throws error if the target field is not found
-    var regex = new RegExp(config.target_field + '\\b');
-    var targetIndex = data.search(regex);
     if (targetIndex < 0) {
-      throw new Error('target field not found');
-    };
+      callback(new Error('target field not found'));
+      return;
+    }
 
-    // use the target index to separate out field line
-    // split line on line return and colon, max 2 items
-    // target value will be at 1st index. trim spaces
-    return data.substring(targetIndex)
+    /*
+     * use the target index to separate out field line
+     * split line on line return and colon, max 2 items
+     * target value will be at 1st index. trim spaces
+     */
+    let targetValue = data.substring(targetIndex)
       .split((/[\r\n:]+/), 2)[1]
       .trim();
+
+    callback(null, config, targetValue);
   }
 
-  async removeReport(config) {
-    // check if optional delete property is present and if it is true
-    // using string constructor in case if value is a boolean or string 
-    if (config.hasOwnProperty('remove_after_parse') &&
-      String(config.remove_after_parse).toLowerCase() === 'true') {
-      var pathToFile = path.join(config.working_dir, config.filename);
-      await fs.promises.unlink(pathToFile);
-    }
+  /**
+   * check if optional delete property is present and if it is true.
+   * @param {object}   config      config object.
+   * @param {string}   targetValue value from target field.
+   * @param {function} callback    callback function.
+   */
+  removeReport(config, targetValue, callback) {
+    
+    // in an async iife to await unlink and to catch a potential error
+    (async function () {
+
+      // using string constructor for value in case if value is a boolean or string 
+      if (Object.prototype.hasOwnProperty.call(config, 'remove_after_parse') &&
+        String(config.remove_after_parse).toLowerCase() === 'true') {
+
+        let pathToFile = path.join(config.working_dir, config.filename);
+        await fs.promises.unlink(pathToFile);
+      }
+
+      // callback for if there is no error, callback in catch if there is an error
+      callback(null, targetValue);
+    })().catch(error => callback(error))
   }
 }
 
