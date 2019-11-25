@@ -22,9 +22,9 @@ class ReportParser {
     // waterfall sends the results from the previous function as arguments to the next
     async.waterfall([
       async.apply(this.validateConfig, config),
-      this.readReport,
-      this.getValue,
-      this.removeReport
+        this.readReport,
+        this.getValue,
+        this.removeReport
     ], function (err, result) {
       let errorMessage = '';
       if (err !== null) {
@@ -98,7 +98,7 @@ class ReportParser {
    * @param {function} callback    callback function.
    */
   removeReport(config, targetValue, callback) {
-    
+
     // in an async iife to await unlink and to catch a potential error
     (async function () {
 
@@ -112,7 +112,7 @@ class ReportParser {
 
       // callback for if there is no error, callback in catch if there is an error
       callback(null, targetValue);
-    })().catch(error => callback(error))
+    })().catch(error => callback(error));
   }
 }
 
