@@ -38,6 +38,11 @@ class ReportParser {
     });
   }
 
+  /**
+   * validates the arguments.
+   * @param {object}   config   config object.
+   * @param {function} callback callback function.
+   */
   validArguments(config, callback) {
     if (typeof config !== 'object' && typeof callback !== 'function') {
       console.log('object and function were not passed in');
