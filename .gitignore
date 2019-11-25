@@ -59,9 +59,3 @@ typings/
 
 # next.js build output
 .next
-
-# .vs code launch settings
-.vscode/
-
-# eslint settings
-.eslintrc.json
