@@ -14,11 +14,18 @@ chai.should();
 const ReportParser = require('../src/reportParser');
 var reportParser = new ReportParser();
 
+const parser_config = {
+  'working_dir': './test/resources',
+  'filename': 'qa.report',
+  'target_field': 'report_status'
+};
+
 describe('smoke test', function () {
   it('tests working', function () {
     expect(true).to.be.true;
   });
 });
+
 
 describe('config object validation', function () {
   it('should be a function', function () {
@@ -62,12 +69,6 @@ describe('config object validation', function () {
   });
 
   it('returns no error with correct config object', function () {
-    let parser_config = {
-      'working_dir': './test/resources',
-      'filename': 'qa.report',
-      'target_field': 'report_status'
-    };
-
     reportParser.validateConfig(parser_config, function (err, config) {
       expect(err).to.be.null;
       expect(config).to.equal(parser_config);
@@ -95,12 +96,6 @@ describe('read report', function () {
   });
 
   it('returns a string', function () {
-    let parser_config = {
-      'working_dir': './test/resources',
-      'filename': 'qa.report',
-      'target_field': 'report_status'
-    };
-
     reportParser.readReport(parser_config, function (err, config, data) {
       expect(err).to.be.null;
       expect(config).to.equal(parser_config);
@@ -115,11 +110,6 @@ describe('get value', function () {
   });
 
   it('returns expected value', function () {
-    let parser_config = {
-      'working_dir': './test/resources',
-      'filename': 'qa.report',
-      'target_field': 'report_status'
-    };
     let data = 'report_status : OK';
     reportParser.getValue(parser_config, data, function (err, config, targetValue) {
       expect(err).to.be.null;
@@ -149,11 +139,6 @@ describe('remove report', function () {
   });
 
   it('does not remove the report without optional key', function () {
-    let parser_config = {
-      'working_dir': './test/resources',
-      'filename': 'qa.report',
-      'target_field': 'report_status'
-    };
     let passedValue = 'OK';
     reportParser.removeReport(parser_config, passedValue, function (err, targetValue) {
       expect(err).to.be.null;
@@ -257,12 +242,6 @@ describe('parse', function () {
   });
 
   it('returns expected target value', function () {
-    let parser_config = {
-      'working_dir': './test/resources',
-      'filename': 'qa.report',
-      'target_field': 'report_status'
-    };
-
     reportParser.parse(parser_config, function (err, parsed_value) {
       expect(err).to.be.empty;
       expect(parsed_value).to.equal('OK');
